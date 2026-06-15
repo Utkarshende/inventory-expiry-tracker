@@ -1,12 +1,11 @@
-// frontend/src/App.jsx
 import React, { useContext } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login.jsx';
 import Signup from './pages/Signup.jsx';
 import Dashboard from './pages/Dashboard.jsx';
-import { AuthContext } from './context/AuthContext.jsx';
+import Inventory from './pages/Inventory.jsx';
+import { AuthContext } from '../context/AuthContext.jsx';
 
-// Custom Route Guard Enforcer wrapper component
 const ProtectedRoute = ({ children }) => {
   const { user } = useContext(AuthContext);
   return user ? children : <Navigate to="/login" replace />;
@@ -25,6 +24,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/inventory" 
+          element={
+            <ProtectedRoute>
+              <Inventory />
             </ProtectedRoute>
           } 
         />
