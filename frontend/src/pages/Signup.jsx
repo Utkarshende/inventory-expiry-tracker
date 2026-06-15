@@ -3,6 +3,7 @@ import React, { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authAPI } from '../services/api.js';
 import { AuthContext } from '../context/AuthContext.jsx';
+import { ShieldAlert } from 'lucide-react';
 
 const Signup = () => {
   const [name, setName] = useState('');
@@ -18,10 +19,7 @@ const Signup = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-
-    if (!name || !email || !password) {
-      return setError('All fields are required.');
-    }
+    if (!name || !email || !password) return setError('All fields are required.');
 
     try {
       setLoading(true);
@@ -36,53 +34,60 @@ const Signup = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flex: 1, padding: '2rem' }}>
-      <div className="auth-container">
-        <div className="auth-header">
-          <h1>Create account</h1>
-          <p>Register an automated inventory management profile</p>
+    <div className="min-h-screen flex items-center justify-center p-6 bg-gray-50">
+      <div className="w-full max-w-md bg-white border border-gray-200 rounded-xl p-8 shadow-sm">
+        <div className="flex flex-col items-center mb-6">
+          <div className="p-3 bg-black text-white rounded-lg mb-3">
+            <ShieldAlert size={24} />
+          </div>
+          <h1 className="text-xl font-bold tracking-tight text-gray-900">Create account</h1>
+          <p className="text-sm text-gray-500 mt-1">Register an automated stock management profile</p>
         </div>
 
-        {error && <div className="error-banner">{error}</div>}
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg">
+            {error}
+          </div>
+        )}
 
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>Full Name</label>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium uppercase tracking-wider text-gray-700 mb-1.5">Full Name</label>
             <input
               type="text"
-              className="form-input"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none transition focus:border-black"
               placeholder="Jane Doe"
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
           </div>
 
-          <div className="form-group">
-            <label>Email Address</label>
+          <div>
+            <label className="block text-xs font-medium uppercase tracking-wider text-gray-700 mb-1.5">Email Address</label>
             <input
               type="email"
-              className="form-input"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none transition focus:border-black"
               placeholder="manager@store.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
 
-          <div className="form-group">
-            <label>Password</label>
+          <div>
+            <label className="block text-xs font-medium uppercase tracking-wider text-gray-700 mb-1.5">Password</label>
             <input
               type="password"
-              className="form-input"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none transition focus:border-black"
               placeholder="Min. 6 characters"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
 
-          <div className="form-group">
-            <label>System Role Assignment</label>
+          <div>
+            <label className="block text-xs font-medium uppercase tracking-wider text-gray-700 mb-1.5">System Role Assignment</label>
             <select
-              className="form-select"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white outline-none transition focus:border-black"
               value={role}
               onChange={(e) => setRole(e.target.value)}
             >
@@ -91,16 +96,14 @@ const Signup = () => {
             </select>
           </div>
 
-          <button type="submit" className="auth-btn" disabled={loading}>
+          <button type="submit" disabled={loading} className="w-full py-2.5 bg-black text-white rounded-lg text-sm font-medium transition hover:bg-gray-800 disabled:bg-gray-400">
             {loading ? 'Creating Account...' : 'Get Started'}
           </button>
         </form>
 
-        <div className="auth-footer">
+        <div className="mt-6 text-center text-sm text-gray-500">
           Already have an account?{' '}
-          <Link to="/login" className="auth-link">
-            Log in
-          </Link>
+          <Link to="/login" className="font-semibold text-black hover:underline">Log in</Link>
         </div>
       </div>
     </div>
