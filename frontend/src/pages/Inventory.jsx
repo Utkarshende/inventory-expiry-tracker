@@ -3,28 +3,32 @@ import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar.jsx';
 import ProductCatalogFields from '../components/inventory/ProductCatalogFields.jsx';
 import BatchTrackingFields from '../components/inventory/BatchTrackingFields.jsx';
+import CameraScannerModal from '../components/modals/CameraScannerModal.jsx';
 import { productAPI, batchAPI } from '../services/api.js';
-import { Barcode, PlusCircle, Search } from 'lucide-react';
+import { Barcode, PlusCircle, Search, Package, Camera } from 'lucide-react';
 
 const Inventory = () => {
-  // Catalog Form Fields
+  // Catalog Form Layout Fields
   const [barcode, setBarcode] = useState('');
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
   const [price, setPrice] = useState('');
-  const [minStockThreshold, setMinStockThreshold] = useState('10');
+  const [minStockThreshold] = useState('10');
   
-  // Batch Form Fields
+  // Batch Tracking Specific Fields
   const [quantityReceived, setQuantityReceived] = useState('');
   const [costPrice, setCostPrice] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
   
-  // System State Parameters
+  // App Mechanics States
   const [isNewProduct, setIsNewProduct] = useState(false);
   const [catalog, setCatalog] = useState([]);
   const [formProductId, setFormProductId] = useState(null);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [loading, setLoading] = useState(false);
+  
+  // Camera Modal View Layer State Variable Toggle
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
 
   const fetchCatalog = async () => {
     try {
@@ -44,19 +48,25 @@ const Inventory = () => {
     setTimeout(() => setMessage({ type: '', text: '' }), 5000);
   };
 
+  // Helper listener that catches scanned payload outputs from our hardware wrapper modal
+  const handleCameraScanSuccess = (scannedBarcode) => {
+    setBarcode(scannedBarcode);
+    showNotice('success', `Barcode frame captured: ${scannedBarcode}. Fetching details...`);
+  };
+
   const handleBarcodeLookup = async () => {
-    if (!barcode) return;
+    const activeCode = barcode;
+    if (!activeCode) return;
     try {
       setLoading(true);
-      const { data } = await productAPI.scan(barcode);
+      const { data } = await productAPI.scan(activeCode);
       
       setFormProductId(data._id);
       setName(data.name);
       setCategory(data.category);
       setPrice(data.price);
-      setMinStockThreshold(data.minStockThreshold);
       setIsNewProduct(false);
-      showNotice('success', `Product matches: "${data.name}". Ready to log shipment batch details.`);
+      showNotice('success', `Product matches: "${data.name}". Ready to log shipment details.`);
     } catch (err) {
       if (err.response?.status === 404) {
         setIsNewProduct(true);
@@ -64,9 +74,9 @@ const Inventory = () => {
         setName('');
         setCategory('');
         setPrice('');
-        showNotice('warning', 'Barcode not found in catalog. Enter product details to register it.');
+        showNotice('warning', 'Barcode not found in catalog. Enter item properties below to create profile.');
       } else {
-        showNotice('error', 'Catalog lookup connection faulted.');
+        showNotice('error', 'Catalog database look-up faulted.');
       }
     } finally {
       setLoading(false);
@@ -78,7 +88,6 @@ const Inventory = () => {
     setName('');
     setCategory('');
     setPrice('');
-    setMinStockThreshold('10');
     setQuantityReceived('');
     setCostPrice('');
     setExpiryDate('');
@@ -103,7 +112,7 @@ const Inventory = () => {
       }
 
       if (!activeProductId) {
-        return showNotice('error', 'Missing active product binding reference ID.');
+        return showNotice('error', 'Missing unique database product relation reference ID.');
       }
 
       await batchAPI.create({
@@ -113,11 +122,11 @@ const Inventory = () => {
         expiryDate
       });
 
-      showNotice('success', 'Inventory shipment stock logged and tracked successfully.');
+      showNotice('success', 'Stock entry successfully logged in inventory database.');
       handleClearForm();
       fetchCatalog();
     } catch (err) {
-      showNotice('error', err.response?.data?.message || 'Inventory transaction submission faulted.');
+      showNotice('error', err.response?.data?.message || 'Inventory submission request transaction faulted.');
     }
   };
 
@@ -127,11 +136,21 @@ const Inventory = () => {
       
       <div className="w-full max-w-7xl mx-auto p-6 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
         
-        {/* LEFT COLUMN: Modular Intake Form Component */}
+        {/* LEFT COLUMN: Input Form Desk */}
         <div className="lg:col-span-5 bg-white border border-gray-200 rounded-xl p-6 shadow-sm h-fit">
-          <div className="flex items-center gap-2 font-bold text-gray-900 text-base border-b border-gray-100 pb-4 mb-6">
-            <PlusCircle size={18} className="text-black" />
-            Stock Ingestion Dashboard
+          <div className="flex items-center justify-between border-b border-gray-100 pb-4 mb-6">
+            <div className="flex items-center gap-2 font-bold text-gray-900 text-base">
+              <PlusCircle size={18} className="text-black" />
+              Stock Ingestion Desk
+            </div>
+            {/* Added Camera Trigger Button Control */}
+            <button
+              type="button"
+              onClick={() => setIsScannerOpen(true)}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 transition text-gray-700 bg-white"
+            >
+              <Camera size={13} /> Camera Intake
+            </button>
           </div>
 
           {message.text && (
@@ -145,11 +164,8 @@ const Inventory = () => {
           )}
 
           <form onSubmit={handleSubmitInventory} className="space-y-4">
-            {/* Barcode Scanner Element */}
             <div>
-              <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1">
-                Product Barcode Scan ID
-              </label>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1">Product Barcode ID</label>
               <div className="flex gap-2">
                 <div className="relative flex-1">
                   <Barcode size={16} className="absolute left-3 top-2.5 text-gray-400" />
@@ -157,7 +173,7 @@ const Inventory = () => {
                     type="text"
                     required
                     className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 font-mono focus:bg-white outline-none focus:border-black transition"
-                    placeholder="Enter Barcode"
+                    placeholder="Enter Barcode String"
                     value={barcode}
                     onChange={(e) => setBarcode(e.target.value)}
                   />
@@ -168,12 +184,11 @@ const Inventory = () => {
                   disabled={loading}
                   className="px-3 bg-black text-white text-xs font-bold rounded-lg hover:bg-gray-800 transition flex items-center gap-1.5"
                 >
-                  <Search size={13} /> {loading ? 'Searching...' : 'Lookup'}
+                  <Search size={13} /> {loading ? 'Checking...' : 'Lookup'}
                 </button>
               </div>
             </div>
 
-            {/* Sub-Section A: Blueprint Mapping Fields */}
             <ProductCatalogFields 
               formProductId={formProductId}
               isNewProduct={isNewProduct}
@@ -185,7 +200,6 @@ const Inventory = () => {
               setPrice={setPrice}
             />
 
-            {/* Sub-Section B: Financial and Shipping Tracking Details */}
             <BatchTrackingFields 
               quantityReceived={quantityReceived}
               setQuantityReceived={setQuantityReceived}
@@ -195,23 +209,70 @@ const Inventory = () => {
               setExpiryDate={setExpiryDate}
             />
 
-            <button
-              type="submit"
-              className="w-full bg-black text-white text-sm font-bold py-2.5 px-4 rounded-lg hover:bg-gray-800 transition shadow-sm mt-2"
-            >
-              Commit Data to Registry
-            </button>
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                onClick={handleClearForm}
+                className="w-1/3 py-2 border border-gray-200 rounded-lg text-xs font-semibold hover:bg-gray-50 transition"
+              >
+                Clear
+              </button>
+              <button
+                type="submit"
+                className="w-2/3 py-2 bg-black text-white text-xs font-bold rounded-lg hover:bg-gray-800 transition"
+              >
+                Save Stock Entry
+              </button>
+            </div>
           </form>
         </div>
 
-        {/* RIGHT COLUMN Placeholder (e.g. for listing/metrics tables) */}
-        <div className="lg:col-span-7">
-          {/* Render your data catalog elements or summary charts here */}
-        </div>
+        {/* RIGHT COLUMN: Master Listing Visualizer */}
+        <div className="lg:col-span-7 bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+          <div className="flex items-center gap-2 font-bold text-gray-900 text-base border-b border-gray-100 pb-4 mb-4">
+            <Package size={18} className="text-black" />
+            Master Store Catalog System ({catalog.length})
+          </div>
 
+          {catalog.length === 0 ? (
+            <p className="text-sm text-gray-400 text-center py-12">No active items registered in store catalog database.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200 font-semibold text-gray-400 uppercase tracking-wider">
+                    <th className="px-4 py-3">Product Name</th>
+                    <th className="px-4 py-3">Category</th>
+                    <th className="px-4 py-3">Barcode ID</th>
+                    <th className="px-4 py-3 text-right">MSRP Price</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 text-gray-600">
+                  {catalog.map((item) => (
+                    <tr key={item._id} className="hover:bg-gray-50/50 transition">
+                      <td className="px-4 py-3 font-semibold text-gray-900">{item.name}</td>
+                      <td className="px-4 py-3">
+{item.category}</td>
+                      <td className="px-4 py-3 font-mono">{item.barcode}</td>
+                      <td className="px-4 py-3 text-right">${item.price.toFixed(2)}</td>    
+                </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
+      
+      {/* Camera Scanner Modal Layer */}
+      {isScannerOpen && (
+        <CameraScannerModal 
+          onClose={() => setIsScannerOpen(false)}
+          onScanSuccess={handleCameraScanSuccess}
+        />
+      )}
     </div>
   );
-};
+}
 
 export default Inventory;
