@@ -4,7 +4,7 @@ import Login from './pages/Login.jsx';
 import Signup from './pages/Signup.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Inventory from './pages/Inventory.jsx';
-import { AuthContext } from '../context/AuthContext.jsx';
+import { AuthContext } from './context/AuthContext.jsx';
 
 const ProtectedRoute = ({ children }) => {
   const { user } = useContext(AuthContext);
