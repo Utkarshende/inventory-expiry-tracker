@@ -3,8 +3,9 @@ import React, { useEffect, useState, useContext } from 'react';
 import Navbar from '../components/Navbar.jsx';
 import AiInsightsModal from '../components/modals/AiInsightsModal.jsx';
 import { batchAPI, productAPI } from '../services/api.js';
+import { exportExpiryReportToCSV } from '../services/csvExporter.js';
 import { AuthContext } from '../context/AuthContext.jsx';
-import { AlertCircle, AlertTriangle, CheckCircle2, Sparkles, Layers } from 'lucide-react';
+import { AlertCircle, AlertTriangle, CheckCircle2, Sparkles, Layers, Download } from 'lucide-react';
 
 const Dashboard = () => {
   const { user } = useContext(AuthContext);
@@ -48,10 +49,15 @@ const Dashboard = () => {
     try {
       await batchAPI.applyDiscount(batchId);
       setIsAiModalOpen(false);
-      fetchDashboardData(); // Hot reload UI metrics layout
+      fetchDashboardData(); 
     } catch (err) {
       alert(err.response?.data?.message || 'AI Discount validation faulted.');
     }
+  };
+
+  // Triggers the shared spreadsheet export action event loop
+  const handleTriggerReportDownload = () => {
+    exportExpiryReportToCSV(matrix.critical, matrix.warning);
   };
 
   if (loading) return <div className="p-12 text-center text-sm text-gray-500 font-medium tracking-wide">Loading Inventory Health Matrix Engine...</div>;
@@ -94,13 +100,26 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* MAIN SPLIT GRID CORES */}
+        {/* SPLIT LAYOUT WORKSPACE WORK DESK CORES */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
-          {/* LEFT: Clearance Desk containing our new integrated AI Triggers */}
+          {/* LEFT CHANNELS: Expiration Desk with CSV Trigger Hub */}
           <div className="lg:col-span-8 bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-            <div className="px-6 py-4 bg-red-50/50 border-b border-gray-200 flex items-center gap-2 text-red-700 font-bold text-sm tracking-wide">
-              <AlertCircle size={16} /> High-Urgency Expiration Clearance Desk
+            <div className="px-6 py-4 bg-red-50/50 border-b border-gray-200 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-red-700 font-bold text-sm tracking-wide">
+                <AlertCircle size={16} /> High-Urgency Expiration Clearance Desk
+              </div>
+              
+              {/* Integrated Clean Mini CSV Report Download Interface Link Button Control */}
+              {(matrix.critical.length > 0 || matrix.warning.length > 0) && (
+                <button
+                  type="button"
+                  onClick={handleTriggerReportDownload}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white text-gray-700 hover:text-black hover:bg-gray-50 border border-gray-200 rounded-lg shadow-sm font-bold text-xs transition"
+                >
+                  <Download size={13} /> Export Report
+                </button>
+              )}
             </div>
             
             {matrix.critical.length === 0 ? (
@@ -146,7 +165,7 @@ const Dashboard = () => {
             )}
           </div>
 
-          {/* RIGHT: Depleted Stock Warning Hub */}
+          {/* RIGHT CHANNELS: Low Stock Warning Alert Engine Hub */}
           <div className="lg:col-span-4 bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
             <div className="px-5 py-4 bg-amber-50/50 border-b border-gray-200 flex items-center gap-2 text-amber-800 font-bold text-sm tracking-wide">
               <Layers size={16} /> Depleted Stock Alert Hub
@@ -176,15 +195,14 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Embedded Render Gate for mounting the AI Analysis Engine Layer */}
       <AiInsightsModal
         isOpen={isAiModalOpen}
         onClose={() => setIsAiModalOpen(false)}
         batch={selectedAiBatch}
-        onApplyAiDiscount={handleExecuteAiDiscount}
+onApplyAiDiscount={handleExecuteAiDiscount}
       />
     </div>
   );
-};
+}
 
 export default Dashboard;
